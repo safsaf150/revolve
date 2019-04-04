@@ -113,7 +113,7 @@ class MeasureBody:
             practical_limit_limbs = self.absolute_size - 1
         else:
             practical_limit_limbs = 2 * math.floor((self.absolute_size - 6) / 3) + ((self.absolute_size - 6) % 3) + 4
-        
+
         if self.extremities is None:
             self.calculate_extremities_extensiveness(None, True, False)
         if self.extremities == 0:
@@ -289,7 +289,7 @@ class MeasureBody:
                 self.hinge_count = 0
                 self.brick_count = 0
                 self.brick_sensor_count = 0
-                self.touch_sensor_count = 0            
+                self.touch_sensor_count = 0
             if module is None:
                 module = self.body
             elif isinstance(module, ActiveHingeModule):

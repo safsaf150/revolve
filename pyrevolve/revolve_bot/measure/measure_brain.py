@@ -183,7 +183,7 @@ class MeasureBrain:
         for node in nodes:
             if nodes[node].type == 'Oscillator':
                 inhibitory = []
-                excitatory = []                
+                excitatory = []
                 for connection in connections:
                     if connection.dst == nodes[node].id and connection.src != nodes[node].id:
                         if connection.weight < 0:
