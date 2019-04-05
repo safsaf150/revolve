@@ -2,6 +2,7 @@
 Revolve body generator based on RoboGen framework
 """
 import yaml
+import traceback
 from collections import OrderedDict
 
 from pyrevolve import SDF
@@ -22,14 +23,11 @@ class RevolveBot:
     a robot's sdf mode
     """
 
-    def __init__(self, id=None):
+    def __init__(self, _id=None):
+        self._id = _id
         self._body = None
         self._brain = None
-        self._id = id
-        self._parents = None
-        self._fitness = None
-        self._behavioural_measurement = None
-        self._battery_level = None
+        # self._battery_level = None
 
     @property
     def id(self):
@@ -261,8 +259,10 @@ class RevolveBot:
                 brain_graph = BrainGraph(self._brain, img_path)
                 brain_graph.brain_to_graph()
                 brain_graph.save_graph()
-            except:
-                print('Failed rendering brain')
+            except Exception as e:
+                print('Failed rendering brain. Exception:')
+                print(e)
+                print(traceback.format_exc())
 
     def render2d(self, img_path):
         """
@@ -275,5 +275,7 @@ class RevolveBot:
             try:
                 render = Render()
                 render.render_robot(self._body, img_path)
-            except:
-                print('Failed rendering 2d robot')
+            except Exception as e:
+                print('Failed rendering 2d robot. Exception:')
+                print(e)
+                print(traceback.format_exc())
