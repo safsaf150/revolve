@@ -70,6 +70,9 @@ async def run():
         population_management=steady_state_population_management,
         population_management_selector=dummy_selection,
         evaluation_time=30,
+        learning=True,
+        learning_brain_pop_size=15,
+        learning_num_generations=15,
         offspring_size=5,
     )
 
