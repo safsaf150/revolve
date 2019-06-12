@@ -92,7 +92,10 @@ class MeasureBody:
             self.branching = 0
             return 0
         practical_limit_branching_bricks = math.floor((self.absolute_size-2)/3)
-        self.branching = self.branching_modules_count / practical_limit_branching_bricks
+        if practical_limit_branching_bricks > 0: 
+            self.branching = self.branching_modules_count / practical_limit_branching_bricks
+        else:
+            self.branching = 0
         return self.branching
 
     def calculate_extremities_extensiveness(self, module=None, extremities=False, extensiveness=False, init=True):
@@ -138,10 +141,10 @@ class MeasureBody:
 
         if self.extremities is None:
             self.calculate_extremities_extensiveness(None, True, False)
-        if self.extremities == 0:
+        if self.extremities == 0 or practical_limit_limbs == 0:
             self.limbs = 0
-            return 0
-        self.limbs = self.extremities / practical_limit_limbs
+        else:
+            self.limbs = self.extremities / practical_limit_limbs
         return self.limbs
 
     def measure_length_of_limbs(self):
@@ -157,7 +160,10 @@ class MeasureBody:
         if self.extensiveness is None:
             self.calculate_extremities_extensiveness(None, False, True)
         practical_limit_extensiveness = self.absolute_size - 2
-        self.length_of_limbs = self.extensiveness / practical_limit_extensiveness
+        if practical_limit_extensiveness > 0:
+            self.length_of_limbs = self.extensiveness / practical_limit_extensiveness
+        else:
+            self.length_of_limbs = 0
         return self.length_of_limbs
 
     def measure_symmetry(self):
@@ -183,9 +189,14 @@ class MeasureBody:
                     vertical_total += 1
                     if [position[0], -position[1]] in coordinates:
                         vertical_mirrored += 1
-
-            horizontal_symmetry = horizontal_mirrored / horizontal_total if horizontal_mirrored > 0 else 0
-            vertical_symmetry = vertical_mirrored / vertical_total if vertical_mirrored > 0 else 0
+            
+            horizontal_symmetry = 0
+            if horizontal_total > 0:
+                horizontal_symmetry = horizontal_mirrored / horizontal_total
+            
+            vertical_symmetry = 0
+            if vertical_total > 0:
+                vertical_symmetry = vertical_mirrored / vertical_total
 
             self.symmetry = max(horizontal_symmetry, vertical_symmetry)
             return self.symmetry
@@ -203,7 +214,9 @@ class MeasureBody:
             self.measure_absolute_size()
         if self.width is None or self.height is None:
             self.measure_width_height()
-        self.coverage = self.absolute_size / (self.width*self.height)
+        self.coverage = 0
+        if self.width > 0 and self.height > 0:
+            self.coverage = self.absolute_size / (self.width*self.height)
         return self.coverage
 
     def count_active_hinges(self, module=None, init=True):
@@ -238,10 +251,9 @@ class MeasureBody:
         if self.active_hinges_count is None:
             self.count_active_hinges()
         practical_limit_active_hinges = self.absolute_size - 2
-        if self.active_hinges_count == 0:
-            self.joints = 0
-            return 0
-        self.joints = self.active_hinges_count / practical_limit_active_hinges
+        self.joints = 0
+        if practical_limit_active_hinges > 0:
+            self.joints = self.active_hinges_count / practical_limit_active_hinges
         return self.joints
 
     def measure_proportion(self):
@@ -251,11 +263,15 @@ class MeasureBody:
         """
         if self.width is None or self.height is None:
             self.measure_width_height()
+        
+        self.proportion = 0
         if self.width < self.height:
-            self.proportion = self.width / self.height
+            if self.height > 0:
+                self.proportion = self.width / self.height
         else:
-            self.proportion = self.height / self.width
-            return self.proportion
+            if self.width > 0:
+                self.proportion = self.height / self.width
+        return self.proportion
 
     def count_free_slots(self, module=None, init=True):
         """
@@ -285,7 +301,9 @@ class MeasureBody:
             self.count_free_slots()
         if self.free_slots == 0:
             self.free_slots = 0.0001
-        self.sensors = self.touch_sensor_count / self.free_slots
+        self.sensors = 0
+        if self.free_slots > 0:
+            self.sensors = self.touch_sensor_count / self.free_slots
         return self.sensors
 
     def measure_absolute_size(self, module=None):
@@ -352,8 +370,11 @@ class MeasureBody:
             return False
         if self.absolute_size is None:
             self.measure_absolute_size()
-        self.size = self.absolute_size / self.max_permitted_modules
 
+        self.size= 0
+        if self.max_permitted_modules > 0:
+            self.size = self.absolute_size / self.max_permitted_modules
+            
     def measure_all(self):
         """
         Perform all measurements

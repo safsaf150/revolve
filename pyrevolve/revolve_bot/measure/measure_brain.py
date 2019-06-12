@@ -105,9 +105,8 @@ class MeasureBrain:
         if self.periods is None:
             self.collect_sets_of_params()
         median = np.median(self.periods)
-        if median == 0 or self.max_param == 0:
-            self.avg_period = 0
-        else:
+        self.avg_period = 0
+        if median > 0 and self.max_param > 0:
             self.avg_period = median / self.max_param
         return self.avg_period
 
@@ -133,9 +132,8 @@ class MeasureBrain:
         if self.phase_offsets is None:
             self.collect_sets_of_params()
         median = np.median(self.phase_offsets)
-        if median == 0 or self.max_param == 0:
-            self.avg_phase_offset = 0
-        else:
+        self.avg_phase_offset = 0
+        if median > 0 or self.max_param > 0:
             self.avg_phase_offset = median / self.max_param
         return self.avg_phase_offset
 
@@ -161,9 +159,8 @@ class MeasureBrain:
         if self.amplitudes is None:
             self.collect_sets_of_params()
         median = np.median(self.amplitudes)
-        if median == 0 or self.max_param == 0:
-            self.avg_amplitude = 0
-        else:
+        self.avg_amplitude = 0
+        if median > 0 and self.max_param > 0:
             self.avg_amplitude = median / self.max_param
         return self.avg_amplitude
 
@@ -248,12 +245,10 @@ class MeasureBrain:
 
         if self.count_oscillators is None:
             self.calc_count_oscillators()
-
-        if recurrent == 0 or self.count_oscillators == 0:
-            self.recurrence = 0
-            return self.recurrence
-        else:
-            self.recurrence = recurrent/self.count_oscillators
+        
+        self.recurrence = 0
+        if recurren > 0 and self.count_oscillators > 0:
+            self.recurrence = recurrent / self.count_oscillators
 
         return self.recurrence
 
