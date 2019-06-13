@@ -1,54 +1,63 @@
 #!/usr/bin/env python3
 import os
 import sys
+import asyncio
+import importlib
 
+from pygazebo.pygazebo import DisconnectError
 from pyrevolve import parser
-from pyrevolve.util import Supervisor
 
 here = os.path.dirname(os.path.abspath(__file__))
 rvpath = os.path.abspath(os.path.join(here, '..', 'revolve'))
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 
-class OnlineEvolutionSupervisor(Supervisor):
-    """
-    Supervisor class that adds some output filtering for ODE errors
-    """
+async def run():
+    arguments = parser.parse_args()
+    if arguments.test_robot is not None:
+        return await test_robot_run(arguments.test_robot)
 
-    def __init__(self, *args, **kwargs):
-        super(OnlineEvolutionSupervisor, self).__init__(*args, **kwargs)
-        self.ode_errors = 0
-
-    def write_stderr(self, data):
-        """
-        :param data:
-        :return:
-        """
-        if 'ODE Message 3' in data:
-            self.ode_errors += 1
-        elif data.strip():
-            sys.stderr.write(data)
-
-        if self.ode_errors >= 100:
-            self.ode_errors = 0
-            sys.stderr.write('ODE Message 3 (100)\n')
+    if arguments.manager is not None:
+        # this split will give errors on windows
+        manager_lib = os.path.splitext(arguments.manager)[0]
+        manager_lib = '.'.join(manager_lib.split('/'))
+        manager = importlib.import_module(manager_lib).run
+        return await manager()
 
 
-if __name__ == "__main__":
-    settings = parser.parse_args()
-    manager_settings = sys.argv[1:]
-    supervisor = OnlineEvolutionSupervisor(
-        manager_cmd=settings.manager,
-        manager_args=manager_settings,
-        world_file=settings.world,
-        simulator_cmd=settings.simulator_cmd,
-        simulator_args=["--verbose"],
-        plugins_dir_path=os.path.join(rvpath, 'build', 'lib'),
-        models_dir_path=os.path.join(rvpath, 'models')
-    )
+def main():
+    import traceback
 
-    if settings.manager is None:
-        ret = supervisor.launch_simulator()
-    else:
-        ret = supervisor.launch()
-    sys.exit(ret)
+    def handler(_loop, context):
+        try:
+            exc = context['exception']
+        except KeyError:
+            print(context['message'])
+            return
+
+        if isinstance(exc, DisconnectError) \
+                or isinstance(exc, ConnectionResetError):
+            print("Got disconnect / connection reset - shutting down.")
+            sys.exit(0)
+
+        if isinstance(exc, OSError) and exc.errno == 9:
+            print(exc)
+            traceback.print_exc()
+            return
+
+        traceback.print_exc()
+        raise exc
+
+    try:
+        loop = asyncio.get_event_loop()
+        loop.set_exception_handler(handler)
+        loop.run_until_complete(run())
+    except KeyboardInterrupt:
+        print("Got CtrlC, shutting down.")
+
+
+if __name__ == '__main__':
+    print("STARTING")
+    main()
+    print("FINISHED")
+

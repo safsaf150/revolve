@@ -12,6 +12,7 @@ from pyrevolve.revolve_bot.brain.brain_nn import BrainNN
 from pyrevolve.revolve_bot.brain.brain_nn import Node
 from pyrevolve.revolve_bot.brain.brain_nn import Connection
 from pyrevolve.revolve_bot.brain.brain_nn import Params
+from ...custom_logging.logger import logger
 import random
 import math
 import copy
@@ -100,15 +101,15 @@ class Plasticoding(Genotype):
     """
     L-system genotypic representation, enhanced with epigenetic capabilities for phenotypic plasticity, through Genetic Programming.
     """
-    id_iter = itertools.count()
 
-    def __init__(self, conf):
+    def __init__(self, conf, robot_id=''):
         """
-        :param conf:
+        :param conf: configurations for lsystem
+        :param robot_id: unique id of the robot
         :type conf: PlasticodingConfig
         """
         self.conf = conf
-        self.id = 'genotype' + str(next(self.id_iter))
+        self.id = str(robot_id)
         self.grammar = {}
 
         # Auxiliary variables
@@ -170,25 +171,16 @@ class Plasticoding(Genotype):
         self.id = id_genotype
         if not load:
             self.grammar = self.conf.initialization_genome(self.conf).grammar
-            print('Robot {} was initialized.'.format(self.id))
+            logger.info('Robot {} was initialized.'.format(self.id))
         else:
             self.load_genotype('{}{}.txt'.format(genotype_path, self.id))
-            print('Robot {} was loaded.'.format(self.id))
+            logger.info('Robot {} was loaded.'.format(self.id))
 
         self.phenotype = self.develop()
 
     def check_validity(self):
         if self.phenotype._morphological_measurements.measurement_to_dict()['hinge_count'] > 0:
             self.valid = True
-
-    def export_phenotype_files(self, path):
-        self.export_genotype('experiments/'+path+'/genotype_'+str(self.id)+'.txt')
-        self.phenotype.save_file('experiments/'+path+'/'+str(self.id)+'.yaml')
-        self.render(path)
-
-    def render(self, path):
-        self.phenotype.render2d('experiments/'+path+'/body_'+str(self.id)+'.png')
-        self.phenotype.render_brain('experiments/'+path+'/brain_' + str(self.id))
 
     def develop(self):
         self.early_development()
@@ -215,12 +207,12 @@ class Plasticoding(Genotype):
                     position = position+ii+1
                 else:
                     position = position + 1
-        # print('Robot ' + str(self.id) + ' was early-developed.')
+        # logger.info('Robot ' + str(self.id) + ' was early-developed.')
 
     def late_development(self):
 
         self.phenotype = RevolveBot()
-        self.phenotype._id = self.id.replace('genome', 'pheno')
+        self.phenotype._id = "robot_{}".format(self.id)
         self.phenotype._brain = BrainNN()
 
         for symbol in self.intermediate_phenotype:
@@ -239,11 +231,11 @@ class Plasticoding(Genotype):
                 self.morph_mounting_container = symbol[self.index_symbol]
 
             if [symbol[self.index_symbol], []] in Alphabet.modules() \
-               and symbol[self.index_symbol] is not Alphabet.CORE_COMPONENT \
-               and self.morph_mounting_container is not None:
+                    and symbol[self.index_symbol] is not Alphabet.CORE_COMPONENT \
+                    and self.morph_mounting_container is not None:
 
                 if type(self.mounting_reference) == CoreModule \
-                   or type(self.mounting_reference) == BrickModule:
+                        or type(self.mounting_reference) == BrickModule:
                     slot = self.get_slot(self.morph_mounting_container).value
                 if type(self.mounting_reference) == ActiveHingeModule:
                     slot = Orientation.NORTH.value
@@ -263,7 +255,7 @@ class Plasticoding(Genotype):
                 self.decode_brain_moving(symbol)
 
         self.add_imu_nodes()
-        # print('Robot ' + str(self.id) + ' was late-developed.')
+        # logger.info('Robot ' + str(self.id) + ' was late-developed.')
         return self.phenotype
 
     def move_in_body(self, symbol):
@@ -485,8 +477,8 @@ class Plasticoding(Genotype):
 
         mount = False
         if self.mounting_reference.children[slot] is None \
-           and not (new_module_type == Alphabet.SENSOR
-                    and type(self.mounting_reference) is ActiveHingeModule):
+                and not (new_module_type == Alphabet.SENSOR
+                         and type(self.mounting_reference) is ActiveHingeModule):
             mount = True
 
         if type(self.mounting_reference) is CoreModule \
@@ -523,7 +515,7 @@ class Plasticoding(Genotype):
                     self.mounting_reference_stack.append(self.mounting_reference)
                     self.mounting_reference = module
                     if new_module_type == Alphabet.JOINT_HORIZONTAL \
-                       or new_module_type == Alphabet.JOINT_VERTICAL:
+                            or new_module_type == Alphabet.JOINT_VERTICAL:
                         self.decode_brain_node(symbol, module.id)
                 else:
                     self.quantity_modules -= 1
@@ -574,7 +566,7 @@ class Plasticoding(Genotype):
                 self.outputs_stack = [self.outputs_stack[-1]]
 
         if symbol[self.index_symbol] == Alphabet.JOINT_VERTICAL \
-           or symbol[self.index_symbol] == Alphabet.JOINT_HORIZONTAL:
+                or symbol[self.index_symbol] == Alphabet.JOINT_HORIZONTAL:
 
             node.layer = 'output'
             node.type = 'Oscillator'
@@ -634,7 +626,7 @@ class Plasticoding(Genotype):
         index_params = 1
 
         if symbol[index_symbol] is Alphabet.JOINT_HORIZONTAL \
-           or symbol[index_symbol] is Alphabet.JOINT_VERTICAL:
+                or symbol[index_symbol] is Alphabet.JOINT_VERTICAL:
 
             symbol[index_params] = [random.uniform(conf.weight_min, conf.weight_max),
                                     random.uniform(conf.oscillator_param_min,
@@ -644,21 +636,21 @@ class Plasticoding(Genotype):
                                     random.uniform(conf.oscillator_param_min,
                                                    conf.oscillator_param_max)]
 
-        if symbol[index_symbol] is Alphabet.SENSOR  \
-           or symbol[index_symbol] is Alphabet.ADD_EDGE \
-           or symbol[index_symbol] is Alphabet.LOOP:
+        if symbol[index_symbol] is Alphabet.SENSOR \
+                or symbol[index_symbol] is Alphabet.ADD_EDGE \
+                or symbol[index_symbol] is Alphabet.LOOP:
 
             symbol[index_params] = [random.uniform(conf.weight_min, conf.weight_max)]
 
         if symbol[index_symbol] is Alphabet.MUTATE_EDGE \
-           or symbol[index_symbol] is Alphabet.MUTATE_AMP \
-           or symbol[index_symbol] is Alphabet.MUTATE_PER \
-           or symbol[index_symbol] is Alphabet.MUTATE_OFF:
+                or symbol[index_symbol] is Alphabet.MUTATE_AMP \
+                or symbol[index_symbol] is Alphabet.MUTATE_PER \
+                or symbol[index_symbol] is Alphabet.MUTATE_OFF:
 
-                symbol[index_params] = [random.normalvariate(0, 1)]
+            symbol[index_params] = [random.normalvariate(0, 1)]
 
         if symbol[index_symbol] is Alphabet.MOVE_REF_S \
-           or symbol[index_symbol] is Alphabet.MOVE_REF_O:
+                or symbol[index_symbol] is Alphabet.MOVE_REF_O:
 
             intermediate_temp = random.normalvariate(0, 1)
             final_temp = random.normalvariate(0, 1)
@@ -692,7 +684,8 @@ class PlasticodingConfig:
                  weight_max=1,
                  axiom_w=Alphabet.CORE_COMPONENT,
                  i_iterations=3,
-                 max_structural_modules=100
+                 max_structural_modules=100,
+                 robot_id=0
                  ):
         self.initialization_genome = initialization_genome
         self.e_max_groups = e_max_groups
@@ -705,3 +698,4 @@ class PlasticodingConfig:
         self.axiom_w = axiom_w
         self.i_iterations = i_iterations
         self.max_structural_modules = max_structural_modules
+        self.robot_id = robot_id

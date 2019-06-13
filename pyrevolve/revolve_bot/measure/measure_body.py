@@ -2,6 +2,7 @@ import math
 from ..render.render import Render
 from ..render.grid import Grid
 from ..revolve_module import ActiveHingeModule, BrickModule, TouchSensorModule, BrickSensorModule, CoreModule
+from ...custom_logging.logger import logger
 
 
 class MeasureBody:
@@ -74,8 +75,7 @@ class MeasureBody:
                 if (isinstance(module, BrickModule) and children_count == 3) or (isinstance(module, CoreModule) and children_count == 4):
                     self.branching_modules_count += 1
         except Exception as e:
-            print('Failed counting branching bricks')
-            print('Exception: {}'.format(e))
+            logger.exception(f'Exception: {e}. \nFailed counting branching bricks')
 
     def measure_branching(self):
         """
@@ -121,8 +121,7 @@ class MeasureBody:
             if children_count == 1 and not (isinstance(module, CoreModule) or isinstance(module, TouchSensorModule)) and extensiveness:
                 self.extensiveness += 1
         except Exception as e:
-            print('Failed calculating extremities or extensiveness')
-            print('Exception: {}'.format(e))
+            logger.exception(f'Exception: {e}. \nFailed calculating extremities or extensiveness')
 
     def measure_limbs(self):
         """
@@ -192,8 +191,7 @@ class MeasureBody:
             return self.symmetry
 
         except Exception as e:
-            print('Failed measuring symmetry')
-            print('Exception: {}'.format(e))
+            logger.exception(f'Exception: {e}. \nFailed measuring symmetry')
 
     def measure_coverage(self):
         """
@@ -225,8 +223,7 @@ class MeasureBody:
                         continue
                     self.count_active_hinges(child_module, False)
         except Exception as e:
-            print('Failed calculating count')
-            print('Exception: {}'.format(e))
+            logger.exception(f'Exception: {e}. \nFailed calculating count')
 
     def measure_joints(self):
         """
@@ -286,6 +283,8 @@ class MeasureBody:
         """
         if self.free_slots is None:
             self.count_free_slots()
+        if self.free_slots == 0:
+            self.free_slots = 0.0001
         self.sensors = self.touch_sensor_count / self.free_slots
         return self.sensors
 
@@ -300,8 +299,7 @@ class MeasureBody:
                 self.absolute_size = self.brick_count + self.hinge_count + 1
             return self.absolute_size
         except Exception as e:
-            print('Failed measuring absolute size')
-            print('Exception: {}'.format(e))
+            logger.exception(f'Exception: {e}. \nFailed measuring absolute size')
 
     def calculate_count(self, module=None, init=True):
         """
@@ -330,8 +328,7 @@ class MeasureBody:
                         continue
                     self.calculate_count(child_module, False)
         except Exception as e:
-            print('Failed calculating count')
-            print('Exception: {}'.format(e))
+            logger.exception(f'Exception: {e}. \nFailed calculating count')
 
     def measure_width_height(self):
         """
@@ -344,8 +341,7 @@ class MeasureBody:
             self.width = render.grid.width
             self.height = render.grid.height
         except Exception as e:
-            print('Failed measuring width and height')
-            print('Exception: {}'.format(e))
+            logger.exception(f'Exception: {e}. \nFailed measuring width and height')
 
     def measure_size(self):
         """
@@ -374,9 +370,9 @@ class MeasureBody:
         self.measure_branching()
         self.measure_sensors()
         self.measure_size()
-        return self.measurement_to_dict()
+        return self.measurements_to_dict()
 
-    def measurement_to_dict(self):
+    def measurements_to_dict(self):
         """
         Return dict of all measurements
         :return:
